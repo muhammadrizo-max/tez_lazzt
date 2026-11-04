@@ -1,0 +1,6 @@
+{
+  "name": "TezLazzat - Admin & Courier Panel",
+  "description": "TezLazzat tezkor taomlar restorani uchun Admin va Kuryer veb-paneli hamda Telegram Bot xizmati",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

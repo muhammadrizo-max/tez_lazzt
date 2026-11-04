@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+/* -------------------------------------------------------------
+   THEME STYLES & LIGHT / DARK MODE OVERRIDES
+   ------------------------------------------------------------- */
+
+/* Light Theme Variables and Overrides */
+html[data-theme="light"],
+[data-theme="light"] {
+  color-scheme: light;
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] body,
+html[data-theme="light"] #root {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Background overrides for Light mode */
+html[data-theme="light"] .bg-\[\#0F1115\],
+html[data-theme="light"] .bg-\[\#0F1115\]\/50,
+html[data-theme="light"] .bg-\[\#0F1115\]\/80 {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] .bg-\[\#16191F\],
+html[data-theme="light"] .bg-\[\#16191F\]\/50,
+html[data-theme="light"] .bg-\[\#16191F\]\/80,
+html[data-theme="light"] .bg-\[\#16191F\]\/90 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+html[data-theme="light"] .bg-\[\#1C2128\],
+html[data-theme="light"] .bg-\[\#181B20\],
+html[data-theme="light"] .bg-\[\#252A31\],
+html[data-theme="light"] .bg-\[\#2D333D\] {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+html[data-theme="light"] .bg-\[\#1C2128\]\/50,
+html[data-theme="light"] .bg-\[\#2D333D\]\/50,
+html[data-theme="light"] .bg-\[\#2D333D\]\/60 {
+  background-color: #e2e8f0 !important;
+}
+
+/* Hover overrides */
+html[data-theme="light"] .hover\:bg-\[\#1C2128\]:hover,
+html[data-theme="light"] .hover\:bg-\[\#252A31\]:hover,
+html[data-theme="light"] .hover\:bg-\[\#2D333D\]:hover {
+  background-color: #e2e8f0 !important;
+}
+
+/* Border overrides for Light mode */
+html[data-theme="light"] .border-\[\#2D333D\],
+html[data-theme="light"] .border-\[\#2D333D\]\/50,
+html[data-theme="light"] .border-\[\#2D333D\]\/60,
+html[data-theme="light"] .border-\[\#252A31\] {
+  border-color: #cbd5e1 !important;
+}
+
+/* Text color overrides for Light mode */
+html[data-theme="light"] .text-white {
+  color: #0f172a !important;
+}
+
+html[data-theme="light"] .text-slate-200,
+html[data-theme="light"] .text-slate-300 {
+  color: #334155 !important;
+}
+
+html[data-theme="light"] .text-slate-400 {
+  color: #475569 !important;
+}
+
+/* Input / Select / Textarea overrides for Light mode */
+html[data-theme="light"] input,
+html[data-theme="light"] select,
+html[data-theme="light"] textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html[data-theme="light"] input::placeholder,
+html[data-theme="light"] textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Modals & Popups in Light mode */
+html[data-theme="light"] .bg-black\/70,
+html[data-theme="light"] .bg-black\/80 {
+  background-color: rgba(15, 23, 42, 0.6) !important;
+}
+
+/* Accent Themes (Sabzi / Orange, Qizil / Red, Sariq / Yellow) */
+html[data-theme="sabzi"] .bg-amber-500 {
+  background-color: #f97316 !important;
+}
+html[data-theme="sabzi"] .text-amber-400,
+html[data-theme="sabzi"] .text-amber-500 {
+  color: #f97316 !important;
+}
+html[data-theme="sabzi"] .border-amber-500\/40 {
+  border-color: rgba(249, 115, 22, 0.4) !important;
+}
+
+html[data-theme="qizil"] .bg-amber-500 {
+  background-color: #ef4444 !important;
+}
+html[data-theme="qizil"] .text-amber-400,
+html[data-theme="qizil"] .text-amber-500 {
+  color: #f87171 !important;
+}
+
+html[data-theme="sariq"] .bg-amber-500 {
+  background-color: #eab308 !important;
+}
+html[data-theme="sariq"] .text-amber-400,
+html[data-theme="sariq"] .text-amber-500 {
+  color: #facc15 !important;
+}
