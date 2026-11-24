@@ -22,6 +22,7 @@ export default function App() {
   }, [authUser]);
 
   const handleLogout = () => {
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
     setAuthUser(null);
   };
 
