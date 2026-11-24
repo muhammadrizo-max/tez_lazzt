@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { store } from './src/db/store';
-import { signToken, requireStaff, requireCourierOrStaff } from './src/auth';
+import { issueSession, clearSession, requireStaff, requireCourierOrStaff } from './src/auth';
 
 dotenv.config();
 
@@ -168,6 +168,11 @@ if (!process.env.VERCEL) {
 // AUTHENTICATION API
 // =======================
 
+app.post('/api/auth/logout', (req, res) => {
+  clearSession(res);
+  res.json({ success: true });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ ok: true });
 });
@@ -193,7 +198,7 @@ app.post('/api/auth/login', (req, res) => {
     const pinOk = emergencyPin && cleanPass === emergencyPin;
     if (passOk || pinOk) {
       const user = { role: 'admin' as const, username: adminUser, name: 'Tizim Admini' };
-      return res.json({ success: true, user: { ...user, token: signToken({ u: adminUser, r: 'admin' }) } });
+      return res.json({ success: true, user: { ...user, token: issueSession(res, { u: adminUser, r: 'admin' }) } });
     }
   }
 
@@ -206,7 +211,7 @@ app.post('/api/auth/login', (req, res) => {
       return res.status(403).json({ error: 'Sizning ofitsiantlik hisobingiz bloklangan!' });
     }
     const user = { role: 'ofitsiant' as const, username: waiter.username, name: waiter.full_name };
-    return res.json({ success: true, user: { ...user, token: signToken({ u: waiter.username, r: 'ofitsiant' }) } });
+    return res.json({ success: true, user: { ...user, token: issueSession(res, { u: waiter.username, r: 'ofitsiant' }) } });
   }
 
   // 3. Kuryer
@@ -226,7 +231,7 @@ app.post('/api/auth/login', (req, res) => {
     };
     return res.json({
       success: true,
-      user: { ...user, token: signToken({ u: courier.username, r: 'courier', cid: courier.id }) },
+      user: { ...user, token: issueSession(res, { u: courier.username, r: 'courier', cid: courier.id }) },
     });
   }
 
