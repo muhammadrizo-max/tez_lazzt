@@ -161,6 +161,10 @@ if (!process.env.VERCEL) {
 // AUTHENTICATION API
 // =======================
 
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true });
+});
+
 app.post('/api/auth/login', (req, res) => {
   const { username, password } = req.body;
 
@@ -973,5 +977,10 @@ async function startServer() {
 if (!process.env.VERCEL) {
   startServer();
 }
+
+app.use((err: any, req: any, res: any, next: any) => {
+  console.error('XATO:', err);
+  res.status(500).json({ error: String(err?.message || err), stack: err?.stack });
+});
 
 export default app;
