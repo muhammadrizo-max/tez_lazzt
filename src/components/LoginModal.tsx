@@ -30,10 +30,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
         body: JSON.stringify({ username: username.trim(), password: password.trim() }),
       });
 
-      const data = await res.json();
+      const rawText = await res.text();
+      let data: any = null;
+      try {
+        data = rawText ? JSON.parse(rawText) : null;
+      } catch {
+        data = null;
+      }
 
-      if (!res.ok || !data.success) {
-        setError(data.error || 'Login yoki parol noto\'g\'ri! Kirish rad etildi.');
+      if (!res.ok || !data?.success) {
+        setError(
+          data?.error ||
+            (res.status === 404
+              ? 'API server topilmadi (404). Backend ishga tushirilmagan.'
+              : `Server xatoligi (${res.status}). Kirish rad etildi.`)
+        );
         setLoading(false);
         return;
       }

@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { Category, Courier, Order, Product, PromoCode, RestaurantTable, SaboyOrder, SystemSettings, SystemStats, User, Waiter } from '../types';
 
-const DATA_FILE = path.join(process.cwd(), 'data.json');
+const BUNDLED_DATA_FILE = path.join(process.cwd(), 'data.json');
+const DATA_FILE = process.env.VERCEL ? '/tmp/data.json' : BUNDLED_DATA_FILE;
 
 function generateLogin10(): string {
   const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -191,8 +192,13 @@ class StoreManager {
 
   private loadData(): DataState {
     try {
-      if (fs.existsSync(DATA_FILE)) {
-        const raw = fs.readFileSync(DATA_FILE, 'utf-8');
+      const sourceFile = fs.existsSync(DATA_FILE)
+        ? DATA_FILE
+        : fs.existsSync(BUNDLED_DATA_FILE)
+          ? BUNDLED_DATA_FILE
+          : null;
+      if (sourceFile) {
+        const raw = fs.readFileSync(sourceFile, 'utf-8');
         const parsed = JSON.parse(raw);
         // Ensure default settings structure is complete
         parsed.settings = {
@@ -541,12 +547,6 @@ class StoreManager {
 
     this.saveData();
     return order;
-  }
-
-  public deleteOrder(order_id: number) {
-    this.state.orders = this.state.orders.filter((o) => o.id !== order_id);
-    this.saveData();
-    return true;
   }
 
   public getStats(): SystemStats {

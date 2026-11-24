@@ -2,7 +2,6 @@ import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
-import { createServer as createViteServer } from 'vite';
 import { store } from './src/db/store';
 
 dotenv.config();
@@ -131,30 +130,32 @@ async function sendTelegramDocumentBuffer(chatId: number | string, buffer: Buffe
 
 // Automatic Daily Backup at 23:00 Tashkent Time (UTC+5) to user 6582564319 and backup group
 let lastBackupDay = '';
-setInterval(async () => {
-  const sysSettings = store.getSettings();
-  const targetUser = sysSettings.backup_user_id || '6582564319';
-  const targetGroup = sysSettings.backup_group_id || '-1003857127288';
-  const targetTime = sysSettings.backup_time || '23:00';
-  const [targetHour] = targetTime.split(':').map(Number);
+if (!process.env.VERCEL) {
+  setInterval(async () => {
+    const sysSettings = store.getSettings();
+    const targetUser = sysSettings.backup_user_id || '6582564319';
+    const targetGroup = sysSettings.backup_group_id || '-1003857127288';
+    const targetTime = sysSettings.backup_time || '23:00';
+    const [targetHour] = targetTime.split(':').map(Number);
 
-  const now = new Date();
-  // Tashkent is UTC+5
-  const tashkentTime = new Date(now.getTime() + (5 * 60 + now.getTimezoneOffset()) * 60000);
-  const hours = tashkentTime.getHours();
-  const dateStr = tashkentTime.toISOString().split('T')[0];
+    const now = new Date();
+    // Tashkent is UTC+5
+    const tashkentTime = new Date(now.getTime() + (5 * 60 + now.getTimezoneOffset()) * 60000);
+    const hours = tashkentTime.getHours();
+    const dateStr = tashkentTime.toISOString().split('T')[0];
 
-  if (hours === (targetHour || 23) && lastBackupDay !== dateStr) {
-    lastBackupDay = dateStr;
-    const rawData = store.getRawData();
-    const buffer = Buffer.from(rawData, 'utf-8');
-    const filename = `fastfood_backup_${dateStr}.json`;
-    const caption = `📦 <b>Avtomatik Kunlik Avariya Zaxira (Backup)</b>\n📅 Sana: ${dateStr} (Toshkent vaqti ${targetTime})`;
-    
-    if (targetUser) await sendTelegramDocumentBuffer(targetUser, buffer, filename, caption);
-    if (targetGroup) await sendTelegramDocumentBuffer(targetGroup, buffer, filename, caption);
-  }
-}, 60000);
+    if (hours === (targetHour || 23) && lastBackupDay !== dateStr) {
+      lastBackupDay = dateStr;
+      const rawData = store.getRawData();
+      const buffer = Buffer.from(rawData, 'utf-8');
+      const filename = `fastfood_backup_${dateStr}.json`;
+      const caption = `📦 <b>Avtomatik Kunlik Avariya Zaxira (Backup)</b>\n📅 Sana: ${dateStr} (Toshkent vaqti ${targetTime})`;
+      
+      if (targetUser) await sendTelegramDocumentBuffer(targetUser, buffer, filename, caption);
+      if (targetGroup) await sendTelegramDocumentBuffer(targetGroup, buffer, filename, caption);
+    }
+  }, 60000);
+}
 
 // =======================
 // AUTHENTICATION API
@@ -950,6 +951,7 @@ app.post('/api/bot/delivery-response', async (req, res) => {
 
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
@@ -968,4 +970,8 @@ async function startServer() {
   });
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;
