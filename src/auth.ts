@@ -54,7 +54,8 @@ export function verifyToken(token: string): TokenPayload | null {
 
 function readPayload(req: Request): TokenPayload | null {
   const header = req.headers.authorization || '';
-  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  const bearer = header.startsWith('Bearer ') ? header.slice(7) : '';
+  const token = bearer || readCookie(req, SESSION_COOKIE);
   if (!token) return null;
   return verifyToken(token);
 }
@@ -75,4 +76,30 @@ export function requireCourierOrStaff(req: Request, res: Response, next: NextFun
   if (!p) return res.status(401).json({ error: 'Avval tizimga kiring!' });
   (req as any).auth = p;
   next();
+}
+
+export const SESSION_COOKIE = 'tz_session';
+
+// Tokenni HttpOnly cookie sifatida yuboradi (brauzer har bir so'rovga avtomatik qo'shadi)
+export function issueSession(res: Response, data: Omit<TokenPayload, 'exp'>): string {
+  const token = signToken(data);
+  const maxAge = Math.floor(TOKEN_TTL_MS / 1000);
+  res.setHeader(
+    'Set-Cookie',
+    `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`
+  );
+  return token;
+}
+
+export function clearSession(res: Response) {
+  res.setHeader('Set-Cookie', `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+}
+
+function readCookie(req: Request, name: string): string {
+  const header = req.headers.cookie || '';
+  for (const part of header.split(';')) {
+    const [k, ...v] = part.trim().split('=');
+    if (k === name) return decodeURIComponent(v.join('='));
+  }
+  return '';
 }
