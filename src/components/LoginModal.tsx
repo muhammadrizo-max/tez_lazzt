@@ -140,7 +140,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ onLoginSuccess }) => {
             </div>
             <div className="flex items-center space-x-1">
               <User className="w-3.5 h-3.5 text-amber-400" />
-              <span>Ofitsiant: ofitsiant123</span>
+              <span>Ofitsiant</span>
             </div>
             <div className="flex items-center space-x-1">
               <Bike className="w-3.5 h-3.5 text-emerald-400" />
