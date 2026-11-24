@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { store } from './src/db/store';
+import { signToken, requireStaff, requireCourierOrStaff } from './src/auth';
 
 dotenv.config();
 
@@ -10,6 +11,12 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: '20mb' }));
+
+// Himoya: admin/ofitsiant/kuryer API'lari token talab qiladi
+app.use('/api/admin', requireStaff);
+app.use('/api/tables', requireStaff);
+app.use('/api/saboy-orders', requireStaff);
+app.use('/api/courier', requireCourierOrStaff);
 
 // Telegram API Helper
 async function sendTelegramMessage(chatId: number | string, text: string, replyMarkup?: any) {
@@ -166,91 +173,64 @@ app.get('/api/health', (req, res) => {
 });
 
 app.post('/api/auth/login', (req, res) => {
-  const { username, password } = req.body;
+  const { username, password } = req.body || {};
 
-  if (!username || !password) {
+  if (typeof username !== 'string' || typeof password !== 'string' || !username.trim() || !password.trim()) {
     return res.status(400).json({ error: 'Username va parol kiritilishi shart!' });
   }
 
   const sysSettings = store.getSettings();
-  const envAdminUser = sysSettings.admin_username || process.env.ADMIN_USERNAME || 'admin';
-  const envAdminPass = sysSettings.admin_password || process.env.ADMIN_PASSWORD || 'admin123';
-  const emergencyPin = sysSettings.emergency_pin || '998877';
+  const adminUser = String(sysSettings.admin_username || process.env.ADMIN_USERNAME || 'admin');
+  const adminPass = String(sysSettings.admin_password || process.env.ADMIN_PASSWORD || '');
+  const emergencyPin = String(sysSettings.emergency_pin || '');
 
   const cleanUser = username.trim().toLowerCase();
   const cleanPass = password.trim();
 
-  // 1. Check Admin Credentials (or Emergency PIN)
-  if ((cleanUser === envAdminUser.toLowerCase() && cleanPass === envAdminPass) || cleanPass === emergencyPin) {
-    return res.json({
-      success: true,
-      user: {
-        role: 'admin',
-        username: envAdminUser,
-        name: 'Tizim Admini',
-      },
-    });
+  // 1. Admin: faqat admin nomi bilan. Favqulodda PIN ham faqat admin nomi bilan ishlaydi.
+  if (cleanUser === adminUser.toLowerCase()) {
+    const passOk = adminPass && cleanPass === adminPass;
+    const pinOk = emergencyPin && cleanPass === emergencyPin;
+    if (passOk || pinOk) {
+      const user = { role: 'admin' as const, username: adminUser, name: 'Tizim Admini' };
+      return res.json({ success: true, user: { ...user, token: signToken({ u: adminUser, r: 'admin' }) } });
+    }
   }
 
-  // 2. Check Waiter / Ofitsiant Credentials
-  const waiters = store.getWaiters();
-  const waiter = waiters.find(
-    (w) => w.username.toLowerCase() === cleanUser && w.password === cleanPass
-  );
-
+  // 2. Ofitsiant
+  const waiter = store
+    .getWaiters()
+    .find((w) => String(w.username || '').toLowerCase() === cleanUser && w.password === cleanPass);
   if (waiter) {
     if (!waiter.is_active) {
       return res.status(403).json({ error: 'Sizning ofitsiantlik hisobingiz bloklangan!' });
     }
-    return res.json({
-      success: true,
-      user: {
-        role: 'ofitsiant',
-        username: waiter.username,
-        name: waiter.full_name,
-      },
-    });
+    const user = { role: 'ofitsiant' as const, username: waiter.username, name: waiter.full_name };
+    return res.json({ success: true, user: { ...user, token: signToken({ u: waiter.username, r: 'ofitsiant' }) } });
   }
 
-  if (cleanUser === 'ofitsiant' || cleanUser.startsWith('ofitsiant_')) {
-    if (cleanPass === 'ofitsiant123' || cleanPass === envAdminPass || cleanPass === emergencyPin) {
-      return res.json({
-        success: true,
-        user: {
-          role: 'ofitsiant',
-          username: cleanUser,
-          name: 'Zal Ofitsianti',
-        },
-      });
-    }
-  }
-
-  // 3. Check Courier Credentials (case insensitive for username)
-  const couriers = store.getCouriers();
-  const courier = couriers.find(
-    (c) => c.username.toLowerCase() === cleanUser && c.password === cleanPass
-  );
-
+  // 3. Kuryer
+  const courier = store
+    .getCouriers()
+    .find((c) => String(c.username || '').toLowerCase() === cleanUser && c.password === cleanPass);
   if (courier) {
     if (!courier.is_active) {
       return res.status(403).json({ error: 'Sizning kuryerlik hisobingiz bloklangan!' });
     }
-
+    const user = {
+      role: 'courier' as const,
+      username: courier.username,
+      name: courier.full_name,
+      courier_id: courier.id,
+      courier,
+    };
     return res.json({
       success: true,
-      user: {
-        role: 'courier',
-        username: courier.username,
-        name: courier.full_name,
-        courier_id: courier.id,
-        courier: courier,
-      },
+      user: { ...user, token: signToken({ u: courier.username, r: 'courier', cid: courier.id }) },
     });
   }
 
-  return res.status(401).json({
-    error: 'Loginingiz yoki parolingiz noto\'g\'ri! Kirish rad etildi.',
-  });
+  return res.status(401).json({ error: "Loginingiz yoki parolingiz noto'g'ri! Kirish rad etildi." });
 });
 
 // =======================
@@ -981,6 +961,13 @@ if (!process.env.VERCEL) {
 app.use((err: any, req: any, res: any, next: any) => {
   console.error('XATO:', err);
   res.status(500).json({ error: String(err?.message || err), stack: err?.stack });
+});
+
+// Umumiy xato ushlagich: stack ni klientga chiqarmaydi
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('[server error]', err);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: 'Serverda ichki xatolik yuz berdi' });
 });
 
 export default app;
